@@ -1,45 +1,63 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const schema = z.object({
+  identificacion: z
+    .string()
+    .regex(/^\d+$/, "Solo se permiten números")
+    .min(10, "Debe tener al menos 10 caracteres")
+    .max(13, "No puede tener más de 13 caracteres"),
+  infoAdicional: z.string().optional(),
+});
 
 export function CedulaRucInput() {
-  const [valor, setValor] = useState("");
-  const [mostrarInputAdicional, setMostrarInputAdicional] = useState(false);
-  const [error, setError] = useState("");
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    if (!/^\d*$/.test(inputValue)) {
-      setError("Solo se permiten números");
-      return;
-    }
-    
-    setError(""); 
-    setValor(inputValue);
+  const identificacionValue = watch("identificacion");
 
-    if (inputValue.length === 10) {
-      setMostrarInputAdicional(false);
-    } else if (inputValue.length === 13) {
-      setMostrarInputAdicional(true);
-    }
+  const onSubmit = (data: any) => {
+    console.log("Datos enviados:", data);
   };
 
   return (
-    <div>
-      <label>Cédula o RUC:</label>
-      <input 
-        type="text" 
-        value={valor} 
-        onChange={handleChange} 
-        maxLength={13} 
-        placeholder="Ingrese su número"
-      />
-      {error && <p style={{ color: "red" }}>{error}</p>}
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <div>
+        <label>Cédula o RUC:</label>
+        <input
+          type="text"
+          {...register("identificacion")}
+          maxLength={13}
+          placeholder="Ingrese su número"
+          className="border p-2 rounded"
+        />
+        {errors.identificacion && (
+          <p className="text-red-500">{errors.identificacion.message}</p>
+        )}
+      </div>
 
-      {mostrarInputAdicional && (
+      {identificacionValue?.length === 13 && (
         <div>
           <label>Información adicional:</label>
-          <input type="text" placeholder="Ingrese más datos" />
+          <input
+            type="text"
+            {...register("infoAdicional")}
+            placeholder="Ingrese más datos"
+            className="border p-2 rounded"
+          />
         </div>
       )}
-    </div>
+
+      <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+        Enviar
+      </button>
+    </form>
   );
 }
